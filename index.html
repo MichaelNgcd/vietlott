@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>🎲 Chọn Số Vietlott</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: linear-gradient(to bottom, #fceabb, #f8b500);
+      margin: 0;
+      padding: 20px;
+      color: #2c3e50;
+    }
+    h1 {
+      text-align: center;
+      color: #e74c3c;
+      font-size: 36px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #fffbea;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    .number {
+      display: inline-block;
+      margin: 5px;
+      padding: 14px;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      text-align: center;
+      line-height: 48px;
+      font-weight: bold;
+      font-size: 18px;
+      color: white;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    }
+    .normal { background-color: #3498db; }
+    .special { background-color: #e74c3c; }
+    select, input[type="number"], button {
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #f39c12;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background-color: #d35400;
+    }
+    .set {
+      margin: 10px 0;
+      background: #ffffffcc;
+      padding: 10px;
+      border-radius: 12px;
+    }
+    .tools button {
+      margin-right: 8px;
+      background-color: #27ae60;
+    }
+    .tools button:hover {
+      background-color: #1e8449;
+    }
+    .audio-control {
+      text-align: right;
+      margin-top: -40px;
+    }
+    .audio-control button {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .result, .history, .tools {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="audio-control">
+    <button onclick="toggleAudio()" id="musicBtn">🔊</button>
+  </div>
+  <h1>🧧 TẠO SỐ VIETLOTT NGẪU NHIÊN</h1>
+  <div class="container">
+    <div>
+      <label>🎯 Loại xổ số:</label><br>
+      <select id="type">
+        <option value="5/35">Vietlott 5/35</option>
+        <option value="6/45">Vietlott 6/45</option>
+        <option value="6/55">Vietlott 6/55</option>
+      </select><br>
+      <label>🔢 Số bộ cần tạo:</label><br>
+      <input type="number" id="count" value="1" min="1"><br>
+      <button onclick="generate()">🎲 TẠO SỐ</button>
+    </div>
+    <div class="result" id="result"></div>
+    <h2>📝 LỊCH SỬ ĐÃ CHỌN</h2>
+    <div class="tools">
+      <button onclick="selectAll(true)">✅ Chọn tất cả</button>
+      <button onclick="selectAll(false)">🚫 Bỏ chọn</button>
+      <button onclick="copySelected()">📋 Copy</button>
+      <button onclick="download()">📁 Tải TXT</button>
+      <button onclick="printSelected()">🖨 In</button>
+      <button onclick="removeSelected()">🗑 Xóa</button>
+      <div style="margin-top: 10px;">
+        <label><input type="checkbox" id="filter" onchange="filter()"> 🔍 Chỉ hiển thị bộ đã chọn</label>
+      </div>
+    </div>
+    <div class="history" id="history"></div>
+  </div>
+  <audio id="bgmusic" loop autoplay>
+    <source src="https://www.bensound.com/bensound-music/bensound-sunny.mp3" type="audio/mp3">
+  </audio>
+  <script>
+    const history = JSON.parse(localStorage.getItem("vietlott_history") || "[]");
+    function saveHistory() {
+      localStorage.setItem("vietlott_history", JSON.stringify(history));
+      renderHistory();
+    }
+    function randomNumbers(count, max) {
+      const nums = new Set();
+      while (nums.size < count) nums.add(Math.floor(Math.random() * max) + 1);
+      return [...nums].sort((a, b) => a - b);
+    }
+    function generate() {
+      const type = document.getElementById("type").value;
+      const count = +document.getElementById("count").value;
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "";
+      for (let i = 0; i < count; i++) {
+        let numbers = [], special = null;
+        switch (type) {
+          case "5/35":
+            numbers = randomNumbers(5, 35);
+            special = Math.floor(Math.random() * 12) + 1;
+            break;
+          case "6/45":
+            numbers = randomNumbers(6, 45);
+            break;
+          case "6/55":
+            numbers = randomNumbers(6, 55);
+            break;
+        }
+        const entry = {
+          type,
+          numbers,
+          special: type === "5/35" ? special : null,
+          selected: false
+        };
+        history.push(entry);
+        const div = document.createElement("div");
+        div.className = "set";
+        numbers.forEach(n => {
+          const span = document.createElement("span");
+          span.className = "number normal";
+          span.innerText = n;
+          div.appendChild(span);
+        });
+        if (type === "5/35" && special !== null) {
+          const span = document.createElement("span");
+          span.className = "number special";
+          span.innerText = special;
+          div.appendChild(span);
+        }
+        const copyBtn = document.createElement("button");
+        copyBtn.textContent = "📋 Copy";
+        copyBtn.onclick = () => navigator.clipboard.writeText(format(entry));
+        div.appendChild(copyBtn);
+        resultDiv.appendChild(div);
+      }
+      saveHistory();
+    }
+    function format(item) {
+      const nums = item.numbers.join(" ");
+      return item.special ? `${nums} + ${item.special}` : nums;
+    }
+    function renderHistory() {
+      const container = document.getElementById("history");
+      container.innerHTML = "";
+      const filter = document.getElementById("filter").checked;
+      history.forEach((item, index) => {
+        if (filter && !item.selected) return;
+        const div = document.createElement("div");
+        div.className = "set";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = item.selected;
+        checkbox.onchange = () => {
+          item.selected = checkbox.checked;
+          saveHistory();
+        };
+        div.appendChild(checkbox);
+        item.numbers.forEach(n => {
+          const span = document.createElement("span");
+          span.className = "number normal";
+          span.innerText = n;
+          div.appendChild(span);
+        });
+        if (item.type === "5/35" && item.special !== null) {
+          const span = document.createElement("span");
+          span.className = "number special";
+          span.innerText = item.special;
+          div.appendChild(span);
+        }
+        const copyBtn = document.createElement("button");
+        copyBtn.textContent = "📋 Copy";
+        copyBtn.onclick = () => navigator.clipboard.writeText(format(item));
+        div.appendChild(copyBtn);
+        container.appendChild(div);
+      });
+    }
+    function selectAll(state) {
+      history.forEach(i => i.selected = state);
+      saveHistory();
+    }
+    function copySelected() {
+      const selected = history.filter(i => i.selected);
+      const text = selected.map(format).join("\n");
+      navigator.clipboard.writeText(text);
+    }
+    function download() {
+      const selected = history.filter(i => i.selected);
+      const text = selected.map(format).join("\n");
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "vietlott.txt";
+      a.click();
+    }
+    function printSelected() {
+      const selected = history.filter(i => i.selected).map(format).join("<br>");
+      const w = window.open();
+      w.document.write("<pre>" + selected + "</pre>");
+      w.print();
+      w.close();
+    }
+    function removeSelected() {
+      if (!confirm("Bạn chắc chắn muốn xóa các bộ đã chọn?")) return;
+      new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3").play();
+      const remain = history.filter(i => !i.selected);
+      history.length = 0;
+      history.push(...remain);
+      saveHistory();
+    }
+    function filter() {
+      renderHistory();
+    }
+    function toggleAudio() {
+      const audio = document.getElementById("bgmusic");
+      const btn = document.getElementById("musicBtn");
+      if (audio.paused) {
+        audio.play();
+        btn.textContent = "🔊";
+      } else {
+        audio.pause();
+        btn.textContent = "🔇";
+      }
+    }
+    renderHistory();
+  </script>
+</body>
+</html>
